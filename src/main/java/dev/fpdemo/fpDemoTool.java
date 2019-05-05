@@ -24,6 +24,9 @@ public class fpDemoTool extends javax.swing.JFrame {
     Properties props;
     fpdInStreamFileSource streamSource;
     
+    OutLogger outLog;
+    OutLogger outProc;
+    
     /**
      * Creates new form fpDemoTool
      */
@@ -32,8 +35,8 @@ public class fpDemoTool extends javax.swing.JFrame {
         
         buttonStop.setEnabled(false);
         
-        OutLogger outLog = new OutLogger(textLog);
-        OutLogger outProc = new OutLogger(textOut);
+        outLog = new OutLogger(textLog);
+        outProc = new OutLogger(textOut);
         
         props = new Properties();
         InputStream in = this.getClass().getResourceAsStream("/fpDemoTool.properties");
@@ -66,8 +69,14 @@ public class fpDemoTool extends javax.swing.JFrame {
         buttonStop = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         textLog = new javax.swing.JTextArea();
+        buttonGenData = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        textRecordCount = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("FPDemoTool");
 
         textOut.setEditable(false);
         textOut.setColumns(20);
@@ -93,39 +102,68 @@ public class fpDemoTool extends javax.swing.JFrame {
         textLog.setRows(5);
         jScrollPane2.setViewportView(textLog);
 
+        buttonGenData.setText("Generate train/test datasets");
+        buttonGenData.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                buttonGenDataMouseClicked(evt);
+            }
+        });
+
+        jLabel1.setText("Record count (0 for all):");
+
+        textRecordCount.setText("0");
+
+        jLabel2.setText("Output:");
+
+        jLabel3.setText("Log:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
+                .addGap(27, 27, 27)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane2))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(27, 27, 27)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(buttonStart)
-                            .addComponent(buttonStop))
-                        .addGap(192, 192, 192)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 763, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addComponent(buttonStart, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(334, 334, 334)
+                        .addComponent(buttonStop, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(buttonGenData)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(jLabel1)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(textRecordCount, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jLabel3)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 532, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel2)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 484, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(27, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addGap(10, 10, 10)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(31, 31, 31)
-                        .addComponent(buttonStart)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(buttonStart)
+                            .addComponent(buttonStop))
+                        .addGap(37, 37, 37)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel1)
+                            .addComponent(textRecordCount, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(buttonStop)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 287, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(buttonGenData)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 304, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
 
@@ -139,6 +177,7 @@ public class fpDemoTool extends javax.swing.JFrame {
                 textOut.append("Started source stream.\n");
                 buttonStart.setEnabled(false);
                 buttonStop.setEnabled(true);
+                buttonGenData.setEnabled(false);
             }
             else
                 textOut.append("Failed to start source stream.\n");
@@ -154,12 +193,28 @@ public class fpDemoTool extends javax.swing.JFrame {
             streamSource.stop();
             buttonStop.setEnabled(false);
             buttonStart.setEnabled(true);
+            buttonGenData.setEnabled(true);
         } catch (IOException ex) {
             Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
             Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_buttonStopMouseClicked
+
+    private void buttonGenDataMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buttonGenDataMouseClicked
+        
+        int recordCount = 0;
+        String rc = textRecordCount.getText();
+        if(!rc.equals(""))
+            recordCount = Integer.parseInt(rc);
+        
+        try {
+            fpdDataGen dataGen = new fpdDataGen(props,outLog,recordCount);
+            dataGen.run();
+        } catch (Exception ex) {
+            Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_buttonGenDataMouseClicked
 
     /**
      * @param args the command line arguments
@@ -201,11 +256,16 @@ public class fpDemoTool extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton buttonGenData;
     private javax.swing.JButton buttonStart;
     private javax.swing.JButton buttonStop;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea textLog;
     private javax.swing.JTextArea textOut;
+    private javax.swing.JTextField textRecordCount;
     // End of variables declaration//GEN-END:variables
 }

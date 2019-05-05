@@ -12,20 +12,43 @@ import javax.swing.JTextArea;
  * @author fprotect
  */
 public class OutLogger{
+    
     JTextArea to;
+    
+    boolean autoRefresh;
 
     OutLogger(JTextArea textOut)
     {
         to = textOut;
+        autoRefresh = false;
     }
 
-    void write(String str)
+    public void write(String str)
     {
         to.append(str+"\n");
+        if(autoRefresh)
+            refresh();
     }
     
-    void writeDebug(String str)
+    public void writeDebug(String str)
     {
         to.append("DEBUG: "+str+"\n");
+        if(autoRefresh)
+            refresh();
+    }
+    
+    public void clear()
+    {
+        to.setText("");
+    }
+    
+    public void refresh()
+    {
+        to.update(to.getGraphics());
+    }
+    
+    public void setAutoRefresh(boolean auto)
+    {
+        autoRefresh = auto;
     }
 }
