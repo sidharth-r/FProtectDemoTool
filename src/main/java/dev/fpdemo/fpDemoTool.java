@@ -22,10 +22,13 @@ import javax.swing.JTextArea;
 public class fpDemoTool extends javax.swing.JFrame {
 
     Properties props;
-    fpdInStreamFileSource streamSource;
+    fpdEngine fpdengine;
     
     OutLogger outLog;
     OutLogger outProc;
+    
+    boolean stateKafkaServer;
+    boolean stateStream;
     
     /**
      * Creates new form fpDemoTool
@@ -33,7 +36,12 @@ public class fpDemoTool extends javax.swing.JFrame {
     public fpDemoTool() throws IOException {
         initComponents();
         
+        stateKafkaServer = false;
+        stateStream = false;
+        
+        buttonStartStream.setEnabled(false);
         buttonStop.setEnabled(false);
+        buttonRestartSys.setEnabled(false);
         
         outLog = new OutLogger(textLog);
         outProc = new OutLogger(textOut);
@@ -51,7 +59,7 @@ public class fpDemoTool extends javax.swing.JFrame {
         else
             props.store(new FileOutputStream("fpDemoTool.properties"), null);     
         
-        streamSource = new fpdInStreamFileSource(props, outLog, outProc);
+        fpdengine = new fpdEngine(props, outLog, outProc);
     }
 
     /**
@@ -74,6 +82,9 @@ public class fpDemoTool extends javax.swing.JFrame {
         textRecordCount = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
+        buttonRestartSys = new javax.swing.JButton();
+        buttonStartStream = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("FPDemoTool");
@@ -113,34 +124,57 @@ public class fpDemoTool extends javax.swing.JFrame {
 
         textRecordCount.setText("0");
 
-        jLabel2.setText("Output:");
+        jLabel2.setText("Kafka Monitor:");
 
         jLabel3.setText("Log:");
+
+        buttonRestartSys.setText("Delete internal topics");
+        buttonRestartSys.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                buttonRestartSysMouseClicked(evt);
+            }
+        });
+
+        buttonStartStream.setText("Start stream");
+        buttonStartStream.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                buttonStartStreamMouseClicked(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(27, 27, 27)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(buttonStart, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(334, 334, 334)
-                        .addComponent(buttonStop, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(buttonGenData)
-                        .addGroup(layout.createSequentialGroup()
-                            .addComponent(jLabel1)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(textRecordCount, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(jLabel3)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 532, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+                        .addGap(27, 27, 27)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addComponent(buttonStart, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGap(334, 334, 334)
+                                    .addComponent(buttonStop, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(buttonGenData)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(textRecordCount, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jLabel3)
+                                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 532, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(buttonRestartSys)
+                            .addComponent(buttonStartStream))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 124, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jSeparator1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 484, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(27, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 588, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(29, 29, 29))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -154,15 +188,21 @@ public class fpDemoTool extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(buttonStart)
                             .addComponent(buttonStop))
-                        .addGap(37, 37, 37)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(buttonStartStream)
+                        .addGap(52, 52, 52)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel1)
                             .addComponent(textRecordCount, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(buttonGenData)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(buttonRestartSys)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 102, Short.MAX_VALUE)
                         .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 304, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
@@ -172,12 +212,14 @@ public class fpDemoTool extends javax.swing.JFrame {
 
     private void buttonStartMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buttonStartMouseClicked
         try {
-            if(streamSource.start())
+            if(fpdengine.start())
             {
                 textOut.append("Started source stream.\n");
                 buttonStart.setEnabled(false);
                 buttonStop.setEnabled(true);
                 buttonGenData.setEnabled(false);
+                buttonRestartSys.setEnabled(true);
+                stateKafkaServer = true;
             }
             else
                 textOut.append("Failed to start source stream.\n");
@@ -190,10 +232,11 @@ public class fpDemoTool extends javax.swing.JFrame {
 
     private void buttonStopMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buttonStopMouseClicked
         try {
-            streamSource.stop();
+            fpdengine.stop();
             buttonStop.setEnabled(false);
             buttonStart.setEnabled(true);
             buttonGenData.setEnabled(true);
+            buttonRestartSys.setEnabled(false);
         } catch (IOException ex) {
             Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
@@ -215,6 +258,20 @@ public class fpDemoTool extends javax.swing.JFrame {
             Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_buttonGenDataMouseClicked
+
+    private void buttonRestartSysMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buttonRestartSysMouseClicked
+        try {
+            fpdengine.restartSys();
+        } catch (IOException ex) {
+            Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(fpDemoTool.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_buttonRestartSysMouseClicked
+
+    private void buttonStartStreamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buttonStartStreamMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_buttonStartStreamMouseClicked
 
     /**
      * @param args the command line arguments
@@ -257,13 +314,16 @@ public class fpDemoTool extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton buttonGenData;
+    private javax.swing.JButton buttonRestartSys;
     private javax.swing.JButton buttonStart;
+    private javax.swing.JButton buttonStartStream;
     private javax.swing.JButton buttonStop;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextArea textLog;
     private javax.swing.JTextArea textOut;
     private javax.swing.JTextField textRecordCount;

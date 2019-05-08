@@ -14,7 +14,7 @@ import java.util.Properties;
  * @author fprotect
  */
 
-public class fpdInStreamFileSource {
+public class fpdEngine {
     
     Runtime rt;
     Process pZookeeperServer;
@@ -29,6 +29,8 @@ public class fpdInStreamFileSource {
     String sCmdKafkaTopicDeleteBase;
     
     String[] topics;
+    String[] topicsInternal;
+    String[] checkpointDirs;
     
     boolean deleteTopicsOnShutdown;
     
@@ -36,15 +38,15 @@ public class fpdInStreamFileSource {
     InputStream istreamKafkaServerError;
     InputStream istreamKafkaConnect;
     InputStream istreamKafkaConnectError;
-    tProcOutWriter writerKafkaServer;
-    tProcOutWriter writerKafkaServerError;
-    tProcOutWriter writerKafkaConnect;
-    tProcOutWriter writerKafkaConnectError;
+    fpdProcOutWriter writerKafkaServer;
+    fpdProcOutWriter writerKafkaServerError;
+    fpdProcOutWriter writerKafkaConnect;
+    fpdProcOutWriter writerKafkaConnectError;
     
     OutLogger log;
     OutLogger out;
     
-    public fpdInStreamFileSource(Properties props, OutLogger outLog, OutLogger outProc)
+    public fpdEngine(Properties props, OutLogger outLog, OutLogger outProc)
     {
         rt = Runtime.getRuntime();
         
@@ -99,12 +101,21 @@ public class fpdInStreamFileSource {
                 .append(zkPort)
                 .append(" --delete --topic ");
         sCmdKafkaTopicDeleteBase = sb.toString();
+
         
-        String topicsRaw = props.getProperty("fprotect.topics");
+        String topicsRaw = props.getProperty("fpdemo.topics") + "," + props.getProperty("fprotect.topics");
         if(topicsRaw != null && !topicsRaw.equals("") && deleteTopicsOnShutdown)
         {
             topics = topicsRaw.split(",");
         }
+        
+        String topicsIntRaw = props.getProperty("fprotect.topics");
+        if(topicsIntRaw != null)
+        {
+            topicsInternal = topicsIntRaw.split(",");
+        }
+        
+        checkpointDirs = new String[]{props.getProperty("fprotect.spark.checkpoints.dir.prim"),props.getProperty("fprotect.spark.checkpoints.dir.sec")};        
     }
     
     public boolean start() throws IOException, InterruptedException
@@ -120,9 +131,9 @@ public class fpdInStreamFileSource {
         
         log.writeDebug(sCmdKafkaServerStart);
         pKafkaServer = rt.exec(sCmdKafkaServerStart);
-        writerKafkaServer = new tProcOutWriter(pKafkaServer.getInputStream(),out);
+        writerKafkaServer = new fpdProcOutWriter(pKafkaServer.getInputStream(),out);
         writerKafkaServer.start();
-        writerKafkaServerError = new tProcOutWriter(pKafkaServer.getErrorStream(),out);
+        writerKafkaServerError = new fpdProcOutWriter(pKafkaServer.getErrorStream(),out);
         writerKafkaServerError.start();
         if(!pKafkaServer.isAlive())
         {
@@ -133,9 +144,9 @@ public class fpdInStreamFileSource {
         
         log.writeDebug(sCmdKafkaConnectStart);
         pKafkaConnectSource = rt.exec(sCmdKafkaConnectStart);
-        writerKafkaConnect = new tProcOutWriter(pKafkaConnectSource.getInputStream(),out);
+        writerKafkaConnect = new fpdProcOutWriter(pKafkaConnectSource.getInputStream(),out);
         writerKafkaConnect.start();
-        writerKafkaConnectError = new tProcOutWriter(pKafkaConnectSource.getErrorStream(),out);
+        writerKafkaConnectError = new fpdProcOutWriter(pKafkaConnectSource.getErrorStream(),out);
         writerKafkaConnectError.start();
         if(!pKafkaConnectSource.isAlive())
         {
@@ -178,4 +189,24 @@ public class fpdInStreamFileSource {
         pZookeeperServer.waitFor();        
     }
     
+    public void restartSys() throws IOException, InterruptedException
+    {
+        log.write("Deleting internal topics");
+        Process p;
+        for(int i = 0; i < topicsInternal.length; i++)
+        {
+            p = rt.exec(sCmdKafkaTopicDeleteBase + topicsInternal[i]);
+            p.waitFor();
+            log.write("Deleted internal topic "+topicsInternal[i]);
+        }
+        
+        log.write("Clearing Spark checkpoints");
+        String cmdClearDirBase = "rm -rf ";
+        for (String checkpointDir : checkpointDirs) {
+            String cmd = cmdClearDirBase + checkpointDir + "/*";
+            log.writeDebug(cmd);
+            p = rt.exec(cmd);
+            p.waitFor();
+        }
+    }    
 }

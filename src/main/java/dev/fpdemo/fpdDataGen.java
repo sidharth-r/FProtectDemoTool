@@ -32,17 +32,19 @@ public class fpdDataGen {
     String sTestSetPath;
     float splitRatio;
     
+    String sqlConnStr;
+    
     OutLogger log;
     
     int nRecords;
     
     public fpdDataGen(Properties props, OutLogger logger, int recordCount)
     {
-        String datasetDir = new StringBuilder().append(props.getProperty("fprotect.dataset.dir"))
+        String datasetDir = new StringBuilder().append(props.getProperty("fpdemo.dataset.dir"))
                 .append("/")
                 .toString();
         sDatasetPath = new StringBuilder(datasetDir)
-                .append(props.getProperty("fprotect.dataset.csv"))
+                .append(props.getProperty("fpdemo.dataset.csv"))
                 .toString();
         sTrainSetPath = new StringBuilder(datasetDir)
                 .append("trainSet.json")
@@ -50,7 +52,16 @@ public class fpdDataGen {
         sTestSetPath = new StringBuilder(datasetDir)
                 .append("testSet.json")
                 .toString();
-        splitRatio = Integer.parseInt(props.getProperty("fprotect.trainsetPercentage")) / 100.0f;
+        splitRatio = Integer.parseInt(props.getProperty("fpdemo.trainsetPercentage")) / 100.0f;
+        
+        sqlConnStr = new StringBuilder()
+                .append(props.getProperty("mysql.db.url"))
+                .append("?")
+                .append("user=")
+                .append(props.getProperty("mysql.db.user"))
+                .append("&password=")
+                .append(props.getProperty("mysql.db.pass"))
+                .toString();
         
         log = logger;
         
@@ -137,7 +148,7 @@ public class fpdDataGen {
         int destBlacklisted;
         int errorBalanceOrig;
         int errorBalanceDest;
-        Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/fprotect?user=root&password=root");
+        Connection conn = DriverManager.getConnection(sqlConnStr);
         Statement stmt = conn.createStatement();
         stmt.executeUpdate("delete from trhistory");
         stmt.executeUpdate("delete from fpdemo.detection_expected");
@@ -191,6 +202,7 @@ public class fpdDataGen {
             tid++;
         }
         log.write(("Wrote "+(tid-1)+" records to training set."));
+        int ltid = tid;
         
         FileOutputStream testOut = new FileOutputStream(sTestSetPath);
         log.write("Writing test set to "+sTestSetPath);
@@ -209,7 +221,7 @@ public class fpdDataGen {
             tid++;
         }
         testOut.close();
-        log.write(("Wrote "+(tid-1)+" records to test set."));
+        log.write(("Wrote "+(tid-ltid)+" records to test set."));
         
         conn.close();
         log.write("Wrote labels to evaluation database.");

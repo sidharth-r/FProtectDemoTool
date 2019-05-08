@@ -16,13 +16,13 @@ import java.util.logging.Logger;
  *
  * @author fprotect
  */
-public class tProcOutWriter extends Thread
+public class fpdProcOutWriter extends Thread
 {
     InputStream stream;
     OutLogger log;
     boolean fQuit;
     
-    tProcOutWriter(InputStream istream, OutLogger logger)
+    fpdProcOutWriter(InputStream istream, OutLogger logger)
     {
         stream = istream;
         log = logger;
@@ -41,7 +41,7 @@ public class tProcOutWriter extends Thread
                     log.write(ln);
                 }
             } catch (IOException ex) {
-                Logger.getLogger(tProcOutWriter.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(fpdProcOutWriter.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
